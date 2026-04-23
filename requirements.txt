@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+fastapi-cli
+streamlit
+requests
+pandas
+numpy
+scikit-learn
+joblib
+mlflow
+matplotlib
+seaborn
+watchfiles
