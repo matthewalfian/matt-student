@@ -1,41 +1,23 @@
 import streamlit as st
 import pandas as pd
-import joblib
-import matplotlib.pyplot as plt
-import seaborn as sns
 import requests
 
-# --- 1. CONFIG & STYLING ---
-st.set_page_config(
-    page_title="Career Analytics Hub",
-    layout="wide"
-)
+# --- 1. CONFIG ---
+st.set_page_config(page_title="Career Analytics Hub", layout="wide")
 
-# Custom CSS untuk mempercantik UI
+# Styling CSS
 st.markdown("""
     <style>
-    .main {
-        background-color: #f5f7f9;
-    }
-    .stButton>button {
-        width: 100%;
-        border-radius: 5px;
-        height: 3em;
-        background-color: #007bff;
-        color: white;
-    }
-    .prediction-box {
-        padding: 20px;
-        border-radius: 10px;
-        background-color: white;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
+    .stButton>button { width: 100%; background-color: #007bff; color: white; height: 3em; }
     </style>
     """, unsafe_allow_html=True)
 
 def main():
     st.title("🎓 Student Career Hub (Decoupled)")
     
+    # URL dari Dev Tunnel kamu (Sudah Diupdate)
+    url_api = "https://n54r6jl7-8000.asse.devtunnels.ms/predict"
+
     # Sidebar Inputs
     with st.sidebar:
         st.header("Profile")
@@ -56,17 +38,18 @@ def main():
         certs = st.number_input("Certifications", 0, 10, 1)
 
     if st.button("🚀 Analyze Career"):
+        # Payload JSON
         payload = {
             "gender": str(gender),
             "ssc_percentage": float(ssc_p),
             "hsc_percentage": float(hsc_p),
             "degree_percentage": float(degree_p),
             "cgpa": float(cgpa),
-            "entrance_exam_score": 75.0, # Sesuaikan jika ada inputnya
+            "entrance_exam_score": 75.0,
             "technical_skill_score": float(tech_score),
             "soft_skill_score": float(soft_score),
             "internship_count": int(interns),
-            "live_projects": 2, # Sesuaikan jika ada inputnya
+            "live_projects": 2,
             "work_experience_months": 0,
             "certifications": int(certs),
             "attendance_percentage": 90.0,
@@ -75,7 +58,10 @@ def main():
         }
         
         try:
-            res = requests.post("http://127.0.0.1:8000/predict", json=payload).json()
+            # Mengirim request ke Backend
+            with st.spinner('Menghubungi API...'):
+                response = requests.post(url_api, json=payload, timeout=15)
+                res = response.json()
             
             if "error" in res:
                 st.error(res["error"])
@@ -83,11 +69,17 @@ def main():
                 st.divider()
                 c1, c2 = st.columns(2)
                 with c1:
-                    st.metric("Placement Status", res["placement_status"])
+                    status = res["placement_status"]
+                    if status == "Placed":
+                        st.success(f"### {status} ✅")
+                    else:
+                        st.error(f"### {status} ❌")
                 with c2:
-                    st.metric("Est. Salary", f"{res['estimated_salary']} LPA")
+                    st.metric("Estimated Salary", f"{res['estimated_salary']} LPA")
+                    
         except Exception as e:
-            st.error(f"Terjadi kesalahan: {e}") # Ini akan memunculkan kode error aslinya di layar Streamlit
+            st.error(f"Koneksi Gagal: {e}")
+            st.info("Pastikan terminal FastAPI sedang 'Running' dan Port 8000 sudah 'Public'.")
 
 if __name__ == "__main__":
     main()
